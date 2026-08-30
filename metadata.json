@@ -1,0 +1,6 @@
+{
+  "name": "R.D TEXTILE",
+  "description": "Premium saree shopping e-commerce platform.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

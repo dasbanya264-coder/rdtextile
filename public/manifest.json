@@ -1,0 +1,27 @@
+{
+  "short_name": "Ripan Saree Center",
+  "name": "Ripan Saree Center - Premium Shopping",
+  "description": "Premium shopping platform for authentic sarees and textiles.",
+  "icons": [
+    {
+      "src": "/logo.png?v=4",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/logo.png?v=4",
+      "type": "image/png",
+      "sizes": "512x512"
+    },
+    {
+      "src": "/logo.png?v=4",
+      "type": "image/png",
+      "sizes": "any"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#fafaf9",
+  "display": "standalone",
+  "theme_color": "#f59e0b",
+  "orientation": "portrait-primary"
+}

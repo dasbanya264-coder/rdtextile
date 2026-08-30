@@ -1,0 +1,300 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useCart } from '../contexts/CartContext';
+import { useAuth } from '../contexts/AuthContext';
+import { collection, addDoc } from 'firebase/firestore';
+import { db, auth } from '../lib/firebase';
+import { signInAnonymously } from 'firebase/auth';
+import { formatPrice } from '../lib/utils';
+import type { Order } from '../types';
+
+import QRCode from 'react-qr-code';
+import { QrCode, Smartphone, MapPin, UploadCloud, X, Loader2, Image as ImageIcon } from 'lucide-react';
+import imageCompression from 'browser-image-compression';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { storage } from '../lib/firebase';
+
+export default function Checkout() {
+  const { items, subtotal, clearCart } = useCart();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [locationLoading, setLocationLoading] = useState(false);
+
+  const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([]);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const [photoProgress, setPhotoProgress] = useState<number>(0);
+
+
+  const [step, setStep] = useState(1);
+
+  // Ensure user is at least authenticated anonymously for uploads and order creation
+  useEffect(() => {
+    if (!user) {
+      signInAnonymously(auth).catch(console.error);
+    }
+  }, [user]);
+
+
+  const formRef = useRef<HTMLFormElement>(null);
+
+  const [formData, setFormData] = useState(() => {
+    const savedData = localStorage.getItem('ripan_saree_checkout_data');
+    const defaultData = {
+      fullName: user?.displayName || '',
+      phone: '',
+      street: '',
+      village: '',
+      district: '',
+      pinCode: '',
+      state: 'West Bengal',
+      paymentMethod: 'cod' as 'cod' | 'upi',
+      transactionId: ''
+    };
+
+    if (savedData) {
+      try {
+        const parsed = JSON.parse(savedData);
+        return {
+          ...defaultData,
+          ...parsed,
+          fullName: user?.displayName || parsed.fullName || '',
+          paymentMethod: 'cod' as 'cod' | 'upi', // Always reset to COD by default
+          transactionId: '' // Always clear transaction ID
+        };
+      } catch (e) {
+        return defaultData;
+      }
+    }
+    return defaultData;
+  });
+
+  // Save address data to localStorage whenever it changes
+  useEffect(() => {
+    const dataToSave = {
+      fullName: formData.fullName,
+      phone: formData.phone,
+      street: formData.street,
+      village: formData.village,
+      district: formData.district,
+      pinCode: formData.pinCode,
+      state: formData.state,
+    };
+    localStorage.setItem('ripan_saree_checkout_data', JSON.stringify(dataToSave));
+  }, [formData.fullName, formData.phone, formData.street, formData.village, formData.district, formData.pinCode, formData.state]);
+
+  const isValidUTR = (utr: string) => {
+    if (!utr || utr.length !== 12) return false;
+    // Check if it's all same digits (e.g., 000000000000, 111111111111)
+    if (/^(\d)\1{11}$/.test(utr)) return false;
+    // Check for sequential fake digits
+    const sequential = ['123456789012', '012345678901', '987654321098'];
+    if (sequential.includes(utr)) return false;
+    return true;
+  };
+
+  useEffect(() => {
+    if (step === 3 && formData.paymentMethod === 'upi' && isValidUTR(formData.transactionId) && !loading) {
+      const timer = setTimeout(() => {
+        if (formRef.current) {
+          formRef.current.requestSubmit();
+        }
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [formData.transactionId, step, formData.paymentMethod, loading]);
+
+  const deliveryCharge = items.length > 0 ? (subtotal > 2000 ? 0 : 150) : 0;
+  const total = subtotal + deliveryCharge;
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+    if (value.length <= 10) {
+      setFormData({...formData, phone: value});
+    }
+  };
+
+  const validateAddressAndNext = () => {
+    if (!formData.fullName || !formData.phone || !formData.street || !formData.village || !formData.district || !formData.pinCode) {
+      alert("Please fill out all address fields.");
+      return;
+    }
+    if (formData.phone.length !== 10 || !/^[6-9]\d{9}$/.test(formData.phone)) {
+      alert("Please enter a valid 10-digit Indian phone number.");
+      return;
+    }
+    setStep(2);
+  };
+
+  const validateSummaryAndNext = () => {
+    setStep(3);
+  };
+
+  
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploadingPhoto(true);
+    setPhotoError(null);
+    setPhotoProgress(0);
+
+    try {
+      const uploadPromises = Array.from(files).map(async (file: File, index) => {
+        const fileId = `customer_photo_${Date.now()}_${Math.random().toString(36).substring(2, 9)}_${index}`;
+        
+        const options = {
+          maxSizeMB: 1.5,
+          maxWidthOrHeight: 1920,
+          useWebWorker: false,
+          fileType: 'image/webp',
+          initialQuality: 0.9
+        };
+        const compressedFile = await imageCompression(file, options);
+        
+        const storageRef = ref(storage, `orders/photos/${fileId}.webp`);
+        const uploadTask = uploadBytesResumable(storageRef, compressedFile);
+
+        return new Promise<string>((resolve, reject) => {
+          uploadTask.on(
+            'state_changed',
+            (snapshot) => {
+              const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+              setPhotoProgress(progress);
+            },
+            (error) => {
+              console.error("Upload failed:", error);
+              reject(error);
+            },
+            async () => {
+              const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+              resolve(downloadURL);
+            }
+          );
+        });
+      });
+
+      const uploadedUrls = await Promise.all(uploadPromises);
+      setUploadedPhotos(prev => [...prev, ...uploadedUrls]);
+    } catch (err) {
+      console.error("Error uploading photo:", err);
+      setPhotoError("Photo upload failed. Please try again.");
+    } finally {
+      setUploadingPhoto(false);
+      setPhotoProgress(0);
+      if (e.target) e.target.value = ''; // Important fix for re-uploading same file
+    }
+  };
+
+  const removePhoto = (urlToRemove: string) => {
+    setUploadedPhotos(prev => prev.filter(url => url !== urlToRemove));
+  };
+
+  const getLiveLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Your browser does not support geolocation.");
+      return;
+    }
+    
+    setLocationLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        const mapsUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
+        
+        // Try to reverse geocode using free Nominatim API to get human readable address
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+          const data = await res.json();
+          if (data && data.address) {
+            setFormData(prev => ({
+              ...prev,
+              village: data.address.village || data.address.city || data.address.town || '',
+              district: data.address.state_district || data.address.county || '',
+              pinCode: data.address.postcode || '',
+              state: data.address.state || prev.state,
+              // Append the Google Maps link to the street so admin gets the exact pin
+              street: `[Live Pin: ${mapsUrl}] ${data.address.road || data.address.suburb || data.display_name?.split(',')[0] || ''}`
+            }));
+          } else {
+            setFormData(prev => ({ ...prev, street: `[Live Pin: ${mapsUrl}]` }));
+          }
+        } catch (error) {
+          // Fallback to just the URL if reverse geocoding fails
+          setFormData(prev => ({ ...prev, street: `[Live Pin: ${mapsUrl}]` }));
+        }
+        
+        setLocationLoading(false);
+      },
+      (error) => {
+        console.error(error);
+        alert("Failed to get location. Please allow location access in your browser settings.");
+        setLocationLoading(false);
+      },
+      { enableHighAccuracy: true }
+    );
+  };
+
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    
+    // Extra validation for phone
+    if (formData.phone.length !== 10 || !/^[6-9]\d{9}$/.test(formData.phone)) {
+      alert("Please enter a valid 10-digit Indian phone number.");
+      return;
+    }
+
+    if (formData.paymentMethod === 'upi' && !isValidUTR(formData.transactionId.trim())) {
+      alert("Please enter a valid 12-digit UPI Transaction ID / UTR. Fake or repeating numbers are not allowed.");
+      return;
+    }
+
+    if (items.length === 0) return;
+    setLoading(true);
+
+    try {
+      const orderData: Omit<Order, 'id'> = {
+        userId: user?.uid || 'guest',
+        items: items.map(item => ({
+          productId: item.product.id,
+          name: item.product.name,
+          price: item.product.discountPrice || item.product.price,
+          quantity: item.quantity,
+          image: item.product.images[0]
+        })),
+        subtotal,
+        deliveryCharge,
+        total,
+        status: 'pending',
+        paymentMethod: formData.paymentMethod,
+        uploadedPhotos: uploadedPhotos,
+        paymentStatus: 'pending',
+        transactionId: formData.paymentMethod === 'upi' ? formData.transactionId : undefined,
+        shippingAddress: {
+          id: Date.now().toString(),
+          fullName: formData.fullName,
+          phone: formData.phone,
+          street: formData.street,
+          village: formData.village,
+          district: formData.district,
+          pinCode: formData.pinCode,
+          state: formData.state,
+          isDefault: true
+        },
+        createdAt: new Date().toISOString()
+      };
+
+      await addDoc(collection(db, 'orders'), orderData);
+      clearCart();
+      alert('Order placed successfully!');
+      navigate('/');
+    } catch (err) {
+      console.error('Error placing order:', err);
+      alert('Failed to place order. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {

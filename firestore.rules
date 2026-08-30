@@ -1,0 +1,47 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to check if user is an admin
+    function isAdmin() {
+      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    match /users/{userId} {
+      allow create: if request.auth != null && request.auth.uid == userId 
+        && (request.resource.data.role == 'customer' || (request.auth.token.email == 'dasbanya264@gmail.com' && request.resource.data.role == 'admin'));
+      
+      allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      
+      // TEMPORARY: Allow users to update their own role if their email is dasbanya264@gmail.com
+      allow update: if request.auth != null && (
+        isAdmin() || 
+        (request.auth.uid == userId && (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'email', 'phone', 'address', 'avatar', 'updatedAt']) ||
+          (request.auth.token.email == 'dasbanya264@gmail.com' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role']))
+        ))
+      );
+      
+      allow delete: if isAdmin();
+    }
+
+    match /settings/{document} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /orders/{orderId} {
+      // Allow authenticated users AND guests to create orders
+      allow create: if request.resource.data.status == 'pending'
+        && request.resource.data.paymentStatus == 'pending'
+        && request.resource.data.keys().hasAll(['userId', 'items', 'total', 'status', 'paymentStatus']);
+      
+      allow read: if request.auth != null && (resource.data.userId == request.auth.uid || isAdmin());
+      allow update, delete: if isAdmin();
+    }
+  }
+}

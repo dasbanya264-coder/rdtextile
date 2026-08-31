@@ -458,6 +458,56 @@ export default function Checkout() {
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg> Back
                   </button>
                   <button type="button" onClick={validateSummaryAndNext} className="px-8 py-3.5 bg-stone-900 text-white font-medium hover:bg-amber-600 transition-colors rounded-full flex items-center gap-2">
+                    
+                {/* Photo Upload Section */}
+                <div className="mt-8 bg-stone-50 p-6 rounded-xl border border-stone-200">
+                  <h3 className="text-lg font-serif text-stone-900 mb-2">Upload Reference Photos (Optional)</h3>
+                  <p className="text-sm text-stone-500 mb-4">Attach any screenshots, payment receipts, or custom design references for your order.</p>
+                  
+                  {photoError && (
+                    <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-md border border-red-200">
+                      {photoError}
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap gap-4 mb-4">
+                    {uploadedPhotos.map((url, idx) => (
+                      <div key={idx} className="relative w-24 h-24 rounded-lg overflow-hidden border border-stone-200 shadow-sm group">
+                        <img src={url} alt="Uploaded preview" className="w-full h-full object-cover" />
+                        <button 
+                          type="button" 
+                          onClick={() => removePhoto(url)} 
+                          className="absolute top-1 right-1 bg-white/90 text-red-600 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                    
+                    <label className={`w-24 h-24 rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors ${uploadingPhoto ? 'border-stone-300 bg-stone-100' : 'border-amber-300 hover:border-amber-500 bg-white hover:bg-amber-50 text-amber-700'}`}>
+                      {uploadingPhoto ? (
+                        <>
+                          <Loader2 className="w-6 h-6 animate-spin text-stone-400 mb-1" />
+                          <span className="text-[10px] font-medium text-stone-500">{photoProgress}%</span>
+                        </>
+                      ) : (
+                        <>
+                          <UploadCloud className="w-6 h-6 mb-1" />
+                          <span className="text-[10px] font-medium">Add Photo</span>
+                        </>
+                      )}
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        multiple 
+                        className="hidden" 
+                        onChange={handlePhotoUpload} 
+                        disabled={uploadingPhoto} 
+                      />
+                    </label>
+                  </div>
+                </div>
+
                     Next: Payment <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                   </button>
                 </div>

@@ -4,7 +4,7 @@
  */
 
 import React, { Suspense } from 'react';
-import { HashRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
 import Layout from './components/layout/Layout';
@@ -36,7 +36,7 @@ export default function App() {
   return (
     <AuthProvider>
       <CartProvider>
-        <HashRouter>
+        <BrowserRouter>
           <Suspense fallback={<LoadingScreen />}>
             <Routes>
               {/* Storefront Routes */}
@@ -60,7 +60,7 @@ export default function App() {
               </Route>
             </Routes>
           </Suspense>
-        </HashRouter>
+        </BrowserRouter>
       </CartProvider>
     </AuthProvider>
   );

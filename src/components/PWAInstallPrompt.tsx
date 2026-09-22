@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Download, Share, PlusSquare, X, Smartphone, CheckCircle } from 'lucide-react';
+import { Download, Share, PlusSquare, X, CheckCircle, Smartphone, MoreVertical } from 'lucide-react';
 
 export default function PWAInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showTopBar, setShowTopBar] = useState(false);
   const [showIOSModal, setShowIOSModal] = useState(false);
+  const [showAndroidModal, setShowAndroidModal] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
 
@@ -25,14 +26,11 @@ export default function PWAInstallPrompt() {
     // Check if user already skipped the top bar in this session
     const skipped = sessionStorage.getItem('pwa-topbar-skipped');
     if (!skipped) {
-      // Show the top bar when the link/app opens
       setShowTopBar(true);
     }
 
     const handler = (e: any) => {
-      // Prevent automatic browser mini-bar
       e.preventDefault();
-      // Stash the event for user action
       setDeferredPrompt(e);
       if (!sessionStorage.getItem('pwa-topbar-skipped')) {
         setShowTopBar(true);
@@ -45,7 +43,7 @@ export default function PWAInstallPrompt() {
       } else if (deferredPrompt) {
         deferredPrompt.prompt();
       } else {
-        setShowTopBar(true);
+        setShowAndroidModal(true);
       }
     };
 
@@ -65,16 +63,19 @@ export default function PWAInstallPrompt() {
     }
 
     if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        setShowTopBar(false);
-        sessionStorage.setItem('pwa-topbar-skipped', 'true');
+      try {
+        await deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          setShowTopBar(false);
+          sessionStorage.setItem('pwa-topbar-skipped', 'true');
+        }
+        setDeferredPrompt(null);
+      } catch (e) {
+        setShowAndroidModal(true);
       }
-      setDeferredPrompt(null);
     } else {
-      // Fallback alert / info for desktop or browsers without prompt event
-      alert("অ্যাপটি ইনস্টল করতে আপনার ব্রাউজারের মেন্যু (৩ ডট) থেকে 'Install App' বা 'Add to Home Screen' এ ক্লিক করুন।");
+      setShowAndroidModal(true);
     }
   };
 
@@ -117,7 +118,7 @@ export default function PWAInstallPrompt() {
                   </span>
                 </div>
                 <p className="text-[11px] sm:text-xs text-amber-200/85 truncate font-sans">
-                  ব্রাউজারে সরাসরি অ্যাপ ইনস্টল করুন ও সহজে কেনাকাটা করুন
+                  ফোনে সরাসরি অ্যাপ ডাউনলোড করুন ও ফুল স্ক্রিনে উপভোগ করুন
                 </p>
               </div>
             </div>
@@ -148,9 +149,63 @@ export default function PWAInstallPrompt() {
         </div>
       )}
 
+      {/* Android / Desktop Instruction Modal */}
+      {showAndroidModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden border border-amber-300 p-6 flex flex-col items-center text-center animate-in zoom-in-95 duration-200">
+            <button 
+              onClick={() => setShowAndroidModal(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-full text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="w-16 h-16 rounded-full p-1 bg-gradient-to-tr from-amber-500 to-amber-300 shadow-md my-2">
+              <img 
+                src="/rd_logo.jpg" 
+                alt="RD Logo" 
+                className="w-full h-full object-cover rounded-full bg-stone-900 border border-white"
+                onError={(e) => { e.currentTarget.src = "/logo.png"; }}
+              />
+            </div>
+
+            <h3 className="text-lg font-serif font-bold text-stone-900 mt-2">
+              ফোনে অ্যাপ ডাউনলোড করুন
+            </h3>
+            <p className="text-xs text-stone-500 mt-1">
+              অ্যাপটি আপনার হোম স্ক্রিনে যুক্ত করে ফুল স্ক্রিনে ব্যবহার করুন:
+            </p>
+
+            <div className="bg-amber-50/70 rounded-2xl p-4 text-xs text-stone-700 border border-amber-200/80 text-left w-full space-y-3 mt-4">
+              <div className="flex items-start gap-2.5">
+                <span className="w-5 h-5 rounded-full bg-amber-500 text-stone-950 font-bold flex items-center justify-center text-[11px] shrink-0 mt-0.5">1</span>
+                <span>ব্রাউজারের উপরে ডানদিকের <MoreVertical className="w-4 h-4 inline text-stone-900 mx-1 align-text-bottom" /> (৩ ডট) বাটনে চাপ দিন।</span>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <span className="w-5 h-5 rounded-full bg-amber-500 text-stone-950 font-bold flex items-center justify-center text-[11px] shrink-0 mt-0.5">2</span>
+                <span>মেন্যু থেকে <Smartphone className="w-4 h-4 inline text-amber-700 mx-1 align-text-bottom" /> <strong>Install App</strong> অথবা <strong>Add to Home screen</strong> এ চাপ দিন।</span>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <span className="w-5 h-5 rounded-full bg-amber-500 text-stone-950 font-bold flex items-center justify-center text-[11px] shrink-0 mt-0.5">3</span>
+                <span>'Install' চাপলেই অ্যাপটি সরাসরি ফোনে ইনস্টল হয়ে যাবে এবং ফুল স্ক্রিনে চালু হবে।</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowAndroidModal(false)}
+              className="mt-5 w-full py-2.5 bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold rounded-xl transition shadow-md"
+            >
+              ঠিক আছে (Got it)
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* iOS Installation Instruction Modal */}
       {showIOSModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-200">
           <div className="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden border border-amber-300 p-6 flex flex-col items-center text-center animate-in zoom-in-95 duration-200">
             <button 
               onClick={() => setShowIOSModal(false)}

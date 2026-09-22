@@ -15,25 +15,42 @@ export default defineConfig(() => {
         devOptions: {
           enabled: true
         },
+        includeAssets: ['logo.png', 'banner.png', 'rd_logo.jpg'],
         manifest: {
-          short_name: 'Ripan Saree',
+          id: '/',
           name: 'Ripan Saree Center',
+          short_name: 'Ripan Saree',
           description: 'Premium shopping platform for authentic sarees and textiles.',
-          theme_color: '#f59e0b',
-          background_color: '#fafaf9',
+          start_url: '/',
+          scope: '/',
           display: 'standalone',
+          orientation: 'portrait',
+          theme_color: '#d97706',
+          background_color: '#fafaf9',
+          categories: ['shopping', 'lifestyle'],
           icons: [
             {
-              src: 'logo.png',
+              src: '/logo.png',
               sizes: '192x192',
-              type: 'image/png'
+              type: 'image/png',
+              purpose: 'any'
             },
             {
-              src: 'logo.png',
+              src: '/logo.png',
               sizes: '512x512',
-              type: 'image/png'
+              type: 'image/png',
+              purpose: 'any'
+            },
+            {
+              src: '/logo.png',
+              sizes: '512x512',
+              type: 'image/png',
+              purpose: 'maskable'
             }
           ]
+        },
+        workbox: {
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp}']
         }
       })
     ],

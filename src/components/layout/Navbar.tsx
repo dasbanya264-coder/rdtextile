@@ -1,8 +1,9 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Search, Menu, User, Heart, Download } from 'lucide-react';
+import { ShoppingCart, Search, Menu, User, Heart, Download, Maximize2, Minimize2 } from 'lucide-react';
 import { useCart } from '../../contexts/CartContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useStoreSettings } from '../../hooks/useStoreSettings';
+import { useFullscreen } from '../../hooks/useFullscreen';
 import { useState } from 'react';
 
 export default function Navbar() {
@@ -11,6 +12,7 @@ export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const { settings } = useStoreSettings();
+  const { isFullscreen, toggleFullscreen, isSupported: isFullscreenSupported } = useFullscreen();
 
   return (
     <>
@@ -53,11 +55,11 @@ export default function Navbar() {
             </Link>
 
             {/* Desktop Navigation */}
-            <div className="hidden lg:flex items-center gap-8 ml-8">
+            <div className="hidden lg:flex items-center gap-6 ml-8">
               <Link to="/" className="text-sm font-medium text-stone-600 hover:text-amber-600 transition-colors tracking-wide uppercase">Home</Link>
-              <Link to="/shop" className="text-sm font-medium text-stone-600 hover:text-amber-600 transition-colors tracking-wide uppercase">Shop All</Link>
-              <Link to="/shop?category=silk" className="text-sm font-medium text-stone-600 hover:text-amber-600 transition-colors tracking-wide uppercase">Silk</Link>
-              <Link to="/shop?category=wedding" className="text-sm font-medium text-stone-600 hover:text-amber-600 transition-colors tracking-wide uppercase">Wedding</Link>
+              <Link to="/shop" className="text-sm font-medium text-stone-600 hover:text-amber-600 transition-colors tracking-wide uppercase">All Sarees</Link>
+              <Link to="/shop?category=tasar_jamdani" className="text-sm font-medium text-stone-600 hover:text-amber-600 transition-colors tracking-wide uppercase">Tasar Jamdani (তসর জামদানি)</Link>
+              <Link to="/shop?category=silk" className="text-sm font-medium text-stone-600 hover:text-amber-600 transition-colors tracking-wide uppercase">Pure Silk (সিল্ক শাড়ি)</Link>
             </div>
 
             <div className="flex-1"></div>
@@ -101,6 +103,23 @@ export default function Navbar() {
                 <Search className="w-5 h-5" />
               </button>
               
+              {/* Fullscreen Button */}
+              {isFullscreenSupported && (
+                <button
+                  type="button"
+                  onClick={toggleFullscreen}
+                  className="text-stone-600 hover:text-amber-600 transition-colors p-2 hidden sm:block"
+                  title={isFullscreen ? "Exit Fullscreen" : "Full Screen (ফুল স্ক্রিন)"}
+                  aria-label="Toggle Fullscreen"
+                >
+                  {isFullscreen ? (
+                    <Minimize2 className="w-5 h-5 text-amber-600" />
+                  ) : (
+                    <Maximize2 className="w-5 h-5" />
+                  )}
+                </button>
+              )}
+
               <Link to="/wishlist" className="text-stone-600 hover:text-amber-600 transition-colors hidden sm:block p-2">
                 <Heart className="w-5 h-5" />
               </Link>
@@ -154,10 +173,30 @@ export default function Navbar() {
               </button>
 
               <Link onClick={() => setIsMobileMenuOpen(false)} to="/" className="block px-4 py-3 rounded-lg text-sm font-medium text-stone-800 hover:text-amber-600 hover:bg-amber-50 tracking-wide uppercase transition-colors">Home</Link>
-              <Link onClick={() => setIsMobileMenuOpen(false)} to="/shop" className="block px-4 py-3 rounded-lg text-sm font-medium text-stone-800 hover:text-amber-600 hover:bg-amber-50 tracking-wide uppercase transition-colors">Shop All</Link>
-              <Link onClick={() => setIsMobileMenuOpen(false)} to="/shop?category=silk" className="block px-4 py-3 rounded-lg text-sm font-medium text-stone-800 hover:text-amber-600 hover:bg-amber-50 tracking-wide uppercase transition-colors">Silk Collection</Link>
-              <Link onClick={() => setIsMobileMenuOpen(false)} to="/shop?category=wedding" className="block px-4 py-3 rounded-lg text-sm font-medium text-stone-800 hover:text-amber-600 hover:bg-amber-50 tracking-wide uppercase transition-colors">Wedding Special</Link>
+              <Link onClick={() => setIsMobileMenuOpen(false)} to="/shop" className="block px-4 py-3 rounded-lg text-sm font-medium text-stone-800 hover:text-amber-600 hover:bg-amber-50 tracking-wide uppercase transition-colors">All Sarees</Link>
+              <Link onClick={() => setIsMobileMenuOpen(false)} to="/shop?category=tasar_jamdani" className="block px-4 py-3 rounded-lg text-sm font-medium text-stone-800 hover:text-amber-600 hover:bg-amber-50 tracking-wide uppercase transition-colors">Tasar Jamdani (তসর জামদানি)</Link>
+              <Link onClick={() => setIsMobileMenuOpen(false)} to="/shop?category=silk" className="block px-4 py-3 rounded-lg text-sm font-medium text-stone-800 hover:text-amber-600 hover:bg-amber-50 tracking-wide uppercase transition-colors">Pure Silk Saree (সিল্ক শাড়ি)</Link>
               <Link onClick={() => setIsMobileMenuOpen(false)} to="/wishlist" className="block px-4 py-3 rounded-lg text-sm font-medium text-stone-800 hover:text-amber-600 hover:bg-amber-50 tracking-wide uppercase transition-colors">My Wishlist</Link>
+              
+              {/* Fullscreen Option for Mobile */}
+              {isFullscreenSupported && (
+                <button 
+                  onClick={() => { 
+                    setIsMobileMenuOpen(false); 
+                    toggleFullscreen(); 
+                  }}
+                  className="w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium text-stone-700 bg-stone-100 hover:bg-stone-200 transition-colors"
+                >
+                  <span className="flex items-center gap-2">
+                    {isFullscreen ? <Minimize2 className="w-4 h-4 text-amber-600" /> : <Maximize2 className="w-4 h-4 text-stone-600" />}
+                    <span>{isFullscreen ? 'ফুল স্ক্রিন বন্ধ করুন' : 'মোবাইল ফুল স্ক্রিন ভিউ (Full Screen)'}</span>
+                  </span>
+                  <span className="text-[11px] text-stone-500 font-mono">
+                    {isFullscreen ? 'Exit' : '100%'}
+                  </span>
+                </button>
+              )}
+
               <div className="h-px bg-stone-100 my-2"></div>
               <button 
                 onClick={() => { setIsMobileMenuOpen(false); (user && !user.isAnonymous) ? navigate('/profile') : navigate('/login'); }}

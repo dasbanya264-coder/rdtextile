@@ -5,10 +5,12 @@ import BottomNav from './BottomNav';
 import PWAInstallPrompt from '../PWAInstallPrompt';
 import WelcomeVoice from '../WelcomeVoice';
 import { useNetworkStatus } from '../../hooks/useNetworkStatus';
-import { WifiOff } from 'lucide-react';
+import { useFullscreen } from '../../hooks/useFullscreen';
+import { WifiOff, Maximize2, Minimize2 } from 'lucide-react';
 
 export default function Layout() {
   const isOnline = useNetworkStatus();
+  const { isFullscreen, toggleFullscreen, isSupported: isFullscreenSupported } = useFullscreen();
   return (
     <div className="min-h-screen flex flex-col bg-stone-50 relative pb-16 md:pb-0">
       <WelcomeVoice />
@@ -27,6 +29,26 @@ export default function Layout() {
 
       {/* Floating Action Buttons */}
       <div className="fixed bottom-20 md:bottom-6 right-6 z-40 flex flex-col gap-3">
+        {/* Fullscreen Button */}
+        {isFullscreenSupported && (
+          <button
+            type="button"
+            onClick={toggleFullscreen}
+            className="bg-white text-stone-800 p-2.5 md:p-3 rounded-full shadow-lg hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center group border border-stone-200"
+            aria-label={isFullscreen ? "Exit Fullscreen" : "Full Screen"}
+            title={isFullscreen ? "ফুল স্ক্রিন বন্ধ করুন" : "ফুল স্ক্রিন মোড (Full Screen)"}
+          >
+            {isFullscreen ? (
+              <Minimize2 className="w-5 h-5 md:w-6 md:h-6 text-amber-600" />
+            ) : (
+              <Maximize2 className="w-5 h-5 md:w-6 md:h-6 text-stone-700" />
+            )}
+            <span className="absolute right-full mr-4 bg-white text-stone-800 text-sm font-medium px-3 py-1.5 rounded-lg shadow-md whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-300 hidden md:block border border-stone-100">
+              {isFullscreen ? "Exit Fullscreen" : "Full Screen (ফুল স্ক্রিন)"}
+            </span>
+          </button>
+        )}
+
         {/* Google Maps Button */}
         <a
           href="https://www.google.com/maps/search/?api=1&query=234,+Soumendra+Nath+Thakur+Rd,+Santipur,+West+Bengal+741404"

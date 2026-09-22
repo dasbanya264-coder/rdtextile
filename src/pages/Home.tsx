@@ -1,28 +1,40 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Star, ShieldCheck, Truck, HeartHandshake, Download, Smartphone } from 'lucide-react';
+import { ArrowRight, Star, ShieldCheck, Truck, HeartHandshake, Download, Smartphone, Sparkles } from 'lucide-react';
 import { collection, getDocs, limit, query, orderBy } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import type { Product } from '../types';
+import { useStoreSettings } from '../hooks/useStoreSettings';
 
 import premiumSilkImg from '../assets/images/premium_silk_1788152325215.jpg';
-import dailyCottonImg from '../assets/images/daily_cotton_1788152337840.jpg';
-import weddingCollectionImg from '../assets/images/wedding_collection_1788152349825.jpg';
-import partyWearImg from '../assets/images/party_wear_1788152362720.jpg';
-
-const CATEGORIES = [
-  { id: 'silk', name: 'Premium Silk', image: premiumSilkImg },
-  { id: 'cotton', name: 'Daily Cotton', image: dailyCottonImg },
-  { id: 'wedding', name: 'Wedding Collection', image: weddingCollectionImg },
-  { id: 'party', name: 'Party Wear', image: partyWearImg }
-];
+import tasarImg from '../assets/images/tasar_saree_cat_1790063305377.jpg';
 
 export default function Home() {
+  const { settings } = useStoreSettings();
   const [trending, setTrending] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [bannerUrl, setBannerUrl] = useState<string>(() => {
     return localStorage.getItem('cachedBannerUrl') || '';
   });
+
+  const exploreCategories = [
+    {
+      id: 'tasar_jamdani',
+      name: 'Tasar Jamdani',
+      nameBn: 'তসর জামদানি শাড়ি',
+      subtitle: 'শান্তিপুরের খাঁটি উইভিং কালেকশন',
+      image: settings?.tasarJamdaniImageUrl || tasarImg,
+      tag: 'Handloom Classic'
+    },
+    {
+      id: 'silk',
+      name: 'Pure Silk',
+      nameBn: 'পিওর সিল্ক শাড়ি',
+      subtitle: 'অভিজাত ও রাজকীয় জমকালো সাজ',
+      image: settings?.silkImageUrl || premiumSilkImg,
+      tag: 'Royal Luxury'
+    }
+  ];
 
   useEffect(() => {
     const fetchTrending = async () => {
@@ -146,29 +158,68 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Categories */}
-      <section className="py-8 md:py-12 px-4 max-w-7xl mx-auto w-full">
-        <div className="text-center mb-6 md:mb-8">
-          <h2 className="text-3xl md:text-4xl font-serif text-stone-900 mb-2 tracking-tight">Shop by Category</h2>
-          <div className="w-12 h-0.5 bg-amber-500 mx-auto" />
+      {/* Explore Categories - Tasar Jamdani & Silk Side-by-Side */}
+      <section className="py-8 md:py-14 px-3 sm:px-6 max-w-7xl mx-auto w-full">
+        <div className="text-center mb-6 sm:mb-10">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100/80 border border-amber-300/60 text-amber-900 text-xs font-semibold uppercase tracking-wider mb-2">
+            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+            <span>Featured Handloom Catalog</span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif text-stone-900 mb-2 tracking-tight">
+            Explore Handloom Collections
+          </h2>
+          <p className="text-xs sm:text-sm text-stone-500 max-w-md mx-auto">
+            খাঁটি তসর জামদানি ও পিওর সিল্ক শাড়ির আকর্ষণীয় ক্যাটালগ
+          </p>
+          <div className="w-16 h-0.5 bg-amber-500 mx-auto mt-3" />
         </div>
         
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
-          {CATEGORIES.map(category => (
+        {/* 2 Categories Side-by-Side (পাশাপাশি ২টি ক্যাটালগ কার্ড) */}
+        <div className="grid grid-cols-2 gap-3 sm:gap-6 md:gap-8">
+          {exploreCategories.map(category => (
             <Link 
               key={category.id} 
               to={`/shop?category=${category.id}`}
-              className="group relative h-72 md:h-96 rounded-2xl overflow-hidden block shadow-md hover:shadow-2xl transition-all duration-500"
+              className="group relative h-64 sm:h-80 md:h-[440px] rounded-2xl sm:rounded-3xl overflow-hidden block shadow-md hover:shadow-2xl transition-all duration-500 border border-stone-200/80 bg-stone-900"
             >
+              {/* Product Image with smooth hover scale */}
               <img 
                 src={category.image} 
                 alt={category.name}
-                className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+                className="w-full h-full object-cover object-center transition-transform duration-1000 group-hover:scale-105"
+                onError={(e) => {
+                  e.currentTarget.src = category.id === 'silk' ? premiumSilkImg : tasarImg;
+                }}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-stone-950/90 via-stone-950/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-500" />
-              <div className="absolute bottom-8 left-0 w-full text-center px-4 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
-                <h3 className="text-white font-serif text-2xl tracking-wide mb-2">{category.name}</h3>
-                <span className="text-amber-300 font-sans tracking-widest text-xs uppercase opacity-0 group-hover:opacity-100 transition-all duration-500 delay-100">Explore</span>
+
+              {/* Luxury Gradient Overlays */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-black/10 transition-opacity duration-500 group-hover:from-black/90" />
+              <div className="absolute inset-0 border-2 border-white/0 group-hover:border-amber-400/40 rounded-2xl sm:rounded-3xl transition-colors duration-500 pointer-events-none" />
+
+              {/* Top Tag */}
+              <div className="absolute top-3 left-3 sm:top-5 sm:left-5 z-10">
+                <span className="px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-amber-300 text-[10px] sm:text-xs font-semibold border border-amber-400/30 shadow-sm">
+                  {category.tag}
+                </span>
+              </div>
+
+              {/* Content at bottom */}
+              <div className="absolute bottom-0 left-0 w-full p-3 sm:p-6 text-left transform translate-y-1 group-hover:translate-y-0 transition-transform duration-300 z-10">
+                <h3 className="text-white font-serif text-base sm:text-2xl md:text-3xl font-bold tracking-tight leading-tight">
+                  {category.name}
+                </h3>
+                <p className="text-amber-300 font-sans text-xs sm:text-sm md:text-base font-semibold mt-0.5">
+                  {category.nameBn}
+                </p>
+                <p className="text-stone-300 text-[11px] sm:text-xs mt-1 hidden sm:block font-light line-clamp-1">
+                  {category.subtitle}
+                </p>
+
+                {/* Explore Pill Button */}
+                <div className="mt-2.5 sm:mt-4 inline-flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-amber-500 text-stone-950 font-bold text-[10px] sm:text-xs tracking-wider uppercase shadow-md group-hover:bg-amber-400 transition-colors">
+                  <span>Explore</span>
+                  <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 transition-transform group-hover:translate-x-1" />
+                </div>
               </div>
             </Link>
           ))}

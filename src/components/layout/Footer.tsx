@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useStoreSettings } from '../../hooks/useStoreSettings';
-import { MapPin, Instagram, Facebook, Mail, Phone } from 'lucide-react';
+import { MapPin, Instagram, Facebook, Mail, Phone, Download } from 'lucide-react';
 
 export default function Footer() {
   const { settings } = useStoreSettings();
@@ -46,11 +46,9 @@ export default function Footer() {
             <div>
               <h3 className="text-white font-serif font-medium mb-6 tracking-wide text-lg">Shop Collection</h3>
               <ul className="space-y-3 text-sm text-stone-400">
-                <li><Link to="/shop?category=silk" className="hover:text-amber-400 transition-colors">Pure Silk Sarees</Link></li>
-                <li><Link to="/shop?category=cotton" className="hover:text-amber-400 transition-colors">Handloom Cotton</Link></li>
-                <li><Link to="/shop?category=wedding" className="hover:text-amber-400 transition-colors">Bridal & Wedding</Link></li>
-                <li><Link to="/shop?category=party" className="hover:text-amber-400 transition-colors">Designer Party Wear</Link></li>
-                <li><Link to="/shop" className="hover:text-amber-400 transition-colors">View All Sarees</Link></li>
+                <li><Link to="/shop?category=tasar_jamdani" className="hover:text-amber-400 transition-colors">Tasar Jamdani (তসর জামদানি শাড়ি)</Link></li>
+                <li><Link to="/shop?category=silk" className="hover:text-amber-400 transition-colors">Pure Silk Sarees (সিল্ক শাড়ি)</Link></li>
+                <li><Link to="/shop" className="hover:text-amber-400 transition-colors">View All Sarees (সকল শাড়ি)</Link></li>
               </ul>
             </div>
 
@@ -92,6 +90,32 @@ export default function Footer() {
                 </li>
               </ul>
             </div>
+          </div>
+
+          {/* Install App Banner in Footer */}
+          <div className="mt-12 pt-8 border-t border-stone-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 bg-stone-900/50 p-5 rounded-2xl border border-stone-800">
+            <div className="flex items-center gap-3.5 text-left">
+              <div className="w-11 h-11 rounded-full p-0.5 bg-gradient-to-tr from-amber-400 to-amber-600 shrink-0">
+                <img 
+                  src="/rd_logo.jpg" 
+                  alt="RD App" 
+                  className="w-full h-full rounded-full object-cover border border-stone-900" 
+                  onError={(e) => { e.currentTarget.src = "/logo.png"; }}
+                />
+              </div>
+              <div>
+                <h4 className="text-stone-100 font-serif font-bold text-sm sm:text-base">আমাদের অফিশিয়াল মোবাইল অ্যাপ ইনস্টল করুন</h4>
+                <p className="text-xs text-stone-400 mt-0.5">সহজে শাড়ি দেখতে ও সরাসরি অর্ডার করতে আপনার ফোনে অ্যাপ ডাউনলোড করুন</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent('open-pwa-install'))}
+              className="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-bold text-xs sm:text-sm rounded-xl shadow-md transition-all active:scale-95 flex items-center gap-2 whitespace-nowrap"
+            >
+              <Download className="w-4 h-4 stroke-[2.5]" />
+              <span>ডাউনলোড অ্যাপ / Install</span>
+            </button>
           </div>
         </div>
       </div>

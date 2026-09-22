@@ -7,17 +7,32 @@ export interface StoreSettings {
   bannerUrl: string;
   storeName: string;
   contactPhone: string;
+  tasarJamdaniImageUrl?: string;
+  silkImageUrl?: string;
 }
 
 export const DEFAULT_STORE_SETTINGS: StoreSettings = {
   storeName: 'Ripan Saree Center',
   logoUrl: '/rd_logo.jpg',
   bannerUrl: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&q=80&w=1920',
-  contactPhone: '+91 90643 00941'
+  contactPhone: '+91 90643 00941',
+  tasarJamdaniImageUrl: '',
+  silkImageUrl: ''
 };
 
 let cachedSettings: StoreSettings | null = null;
 let fetchPromise: Promise<StoreSettings | null> | null = null;
+
+export function updateCachedSettings(newSettings: Partial<StoreSettings>) {
+  if (cachedSettings) {
+    cachedSettings = { ...cachedSettings, ...newSettings };
+  }
+}
+
+export function invalidateSettingsCache() {
+  cachedSettings = null;
+  fetchPromise = null;
+}
 
 export function useStoreSettings() {
   const [settings, setSettings] = useState<StoreSettings>(cachedSettings || DEFAULT_STORE_SETTINGS);
@@ -43,7 +58,9 @@ export function useStoreSettings() {
                   storeName: data.storeName || DEFAULT_STORE_SETTINGS.storeName,
                   logoUrl: data.logoUrl || DEFAULT_STORE_SETTINGS.logoUrl,
                   bannerUrl: data.bannerUrl || DEFAULT_STORE_SETTINGS.bannerUrl,
-                  contactPhone: data.contactPhone || DEFAULT_STORE_SETTINGS.contactPhone
+                  contactPhone: data.contactPhone || DEFAULT_STORE_SETTINGS.contactPhone,
+                  tasarJamdaniImageUrl: data.tasarJamdaniImageUrl || '',
+                  silkImageUrl: data.silkImageUrl || ''
                 };
                 return cachedSettings;
               }

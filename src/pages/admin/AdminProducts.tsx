@@ -22,7 +22,7 @@ export default function AdminProducts() {
     sku: '',
     price: '',
     description: '',
-    categoryId: 'silk',
+    categoryId: 'tasar_jamdani',
     fabric: '',
     color: '',
     stockQuantity: '10',
@@ -204,7 +204,7 @@ export default function AdminProducts() {
   };
 
   const resetForm = () => {
-    setFormData({ name: '', sku: '', price: '', description: '', categoryId: 'silk', fabric: '', color: '', stockQuantity: '10', images: [], videos: [], newVideoUrl: '', isActive: true });
+    setFormData({ name: '', sku: '', price: '', description: '', categoryId: 'tasar', fabric: '', color: '', stockQuantity: '10', images: [], videos: [], newVideoUrl: '', isActive: true });
     setEditingId(null);
   };
 
@@ -304,12 +304,12 @@ export default function AdminProducts() {
                   <input required type="number" min="0" value={formData.stockQuantity} onChange={e => setFormData({...formData, stockQuantity: e.target.value})} className="w-full border border-stone-300 rounded-md p-2" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1">Category</label>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">Category (ক্যাটাগরি)</label>
                   <select value={formData.categoryId} onChange={e => setFormData({...formData, categoryId: e.target.value})} className="w-full border border-stone-300 rounded-md p-2">
-                    <option value="silk">Silk</option>
-                    <option value="cotton">Cotton</option>
-                    <option value="wedding">Wedding</option>
-                    <option value="party">Party Wear</option>
+                    <option value="tasar_jamdani">Tasar Jamdani (তসর জামদানি শাড়ি)</option>
+                    <option value="silk">Pure Silk (পিওর সিল্ক শাড়ি)</option>
+                    <option value="tasar">Tasar (তসর)</option>
+                    <option value="jamdani">Jamdani (জামদানি)</option>
                   </select>
                 </div>
                 <div>

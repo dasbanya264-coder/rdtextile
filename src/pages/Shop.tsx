@@ -58,7 +58,33 @@ export default function Shop() {
 
     // Filter by Category
     if (categoryFilter) {
-      result = result.filter(p => p.categoryId === categoryFilter);
+      if (categoryFilter === 'tasar_jamdani' || categoryFilter === 'tasar' || categoryFilter === 'jamdani') {
+        result = result.filter(p => 
+          p.categoryId === 'tasar_jamdani' ||
+          p.categoryId === 'tasar' || 
+          p.categoryId === 'jamdani' || 
+          p.categoryId === 'toshdor' || 
+          p.categoryId === 'tussar' || 
+          p.categoryId === 'cotton' ||
+          p.fabric?.toLowerCase().includes('tasar') || 
+          p.fabric?.toLowerCase().includes('tussar') || 
+          p.fabric?.toLowerCase().includes('jamdani') || 
+          p.name.toLowerCase().includes('tasar') || 
+          p.name.toLowerCase().includes('tussar') || 
+          p.name.toLowerCase().includes('jamdani') || 
+          p.name.toLowerCase().includes('তসর') ||
+          p.name.toLowerCase().includes('জামদানি')
+        );
+      } else if (categoryFilter === 'silk') {
+        result = result.filter(p => 
+          p.categoryId === 'silk' || 
+          p.fabric?.toLowerCase().includes('silk') ||
+          p.name.toLowerCase().includes('silk') || 
+          p.name.toLowerCase().includes('সিল্ক')
+        );
+      } else {
+        result = result.filter(p => p.categoryId === categoryFilter);
+      }
     }
 
     // Filter by Price
@@ -66,7 +92,26 @@ export default function Shop() {
 
     // Filter by Fabric
     if (selectedFabric !== 'all') {
-      result = result.filter(p => p.fabric?.toLowerCase().includes(selectedFabric.toLowerCase()));
+      if (selectedFabric === 'tasar_jamdani' || selectedFabric === 'tasar' || selectedFabric === 'jamdani') {
+        result = result.filter(p => 
+          p.fabric?.toLowerCase().includes('tasar') || 
+          p.fabric?.toLowerCase().includes('tussar') || 
+          p.fabric?.toLowerCase().includes('jamdani') || 
+          p.name.toLowerCase().includes('তসর') ||
+          p.name.toLowerCase().includes('জামদানি') ||
+          p.categoryId === 'tasar_jamdani' ||
+          p.categoryId === 'tasar' ||
+          p.categoryId === 'jamdani'
+        );
+      } else if (selectedFabric === 'silk') {
+        result = result.filter(p => 
+          p.fabric?.toLowerCase().includes('silk') || 
+          p.name.toLowerCase().includes('সিল্ক') ||
+          p.categoryId === 'silk'
+        );
+      } else {
+        result = result.filter(p => p.fabric?.toLowerCase().includes(selectedFabric.toLowerCase()));
+      }
     }
 
     // Sorting
@@ -89,14 +134,16 @@ export default function Shop() {
   }, [products, categoryFilter, priceRange, selectedFabric, sortBy]);
 
   const CATEGORIES = [
-    { id: 'all', name: 'All Sarees' },
-    { id: 'silk', name: 'Silk' },
-    { id: 'cotton', name: 'Cotton' },
-    { id: 'wedding', name: 'Wedding' },
-    { id: 'party', name: 'Party Wear' }
+    { id: 'all', name: 'All Sarees (সকল শাড়ি)' },
+    { id: 'tasar_jamdani', name: 'Tasar Jamdani (তসর জামদানি)' },
+    { id: 'silk', name: 'Pure Silk (সিল্ক শাড়ি)' }
   ];
   
-  const FABRICS = ['all', 'pure silk', 'art silk', 'cotton', 'linen', 'georgette', 'chiffon'];
+  const FABRICS = [
+    { id: 'all', label: 'All Fabrics' },
+    { id: 'tasar_jamdani', label: 'Tasar Jamdani (তসর জামদানি)' },
+    { id: 'silk', label: 'Pure Silk (সিল্ক)' }
+  ];
 
   const setCategory = (cat: string) => {
     if (cat === 'all') {
@@ -160,18 +207,18 @@ export default function Shop() {
               <h3 className="font-sans tracking-widest text-xs uppercase text-stone-900 font-semibold mb-4">Fabric</h3>
               <ul className="space-y-2">
                 {FABRICS.map(fabric => (
-                  <li key={fabric}>
+                  <li key={fabric.id}>
                     <label className="flex items-center gap-3 cursor-pointer group">
                       <input 
                         type="radio" 
                         name="fabric"
-                        value={fabric}
-                        checked={selectedFabric === fabric}
+                        value={fabric.id}
+                        checked={selectedFabric === fabric.id}
                         onChange={(e) => setSelectedFabric(e.target.value)}
                         className="w-4 h-4 text-amber-500 border-stone-300 focus:ring-amber-500 cursor-pointer"
                       />
-                      <span className={`text-sm capitalize transition-colors ${selectedFabric === fabric ? 'text-amber-600 font-medium' : 'text-stone-500 group-hover:text-stone-800'}`}>
-                        {fabric}
+                      <span className={`text-sm transition-colors ${selectedFabric === fabric.id ? 'text-amber-600 font-medium' : 'text-stone-500 group-hover:text-stone-800'}`}>
+                        {fabric.label}
                       </span>
                     </label>
                   </li>

@@ -11,17 +11,15 @@ export default function Footer() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8">
             <div className="col-span-1 lg:col-span-1">
               <Link to="/" className="flex flex-col gap-3 mb-6">
-                <img 
-                  src={settings?.logoUrl || "/logo.png"} 
-                  alt="Ripan Saree Center Logo" 
-                  className="w-16 h-16 object-contain rounded-full bg-white p-1"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                  }}
-                />
-                <div className="hidden w-16 h-16 bg-gradient-to-br from-amber-500 to-amber-700 rounded-full flex items-center justify-center text-white font-serif font-bold text-3xl">
-                  R
+                <div className="w-16 h-16 rounded-full p-0.5 bg-gradient-to-tr from-amber-500 to-amber-300 shadow-md">
+                  <img 
+                    src="/rd_logo.jpg" 
+                    alt="Ripan Saree Center Logo" 
+                    className="w-full h-full object-cover rounded-full bg-stone-900 border border-white/20"
+                    onError={(e) => {
+                      e.currentTarget.src = settings?.logoUrl || "/logo.png";
+                    }}
+                  />
                 </div>
                 <div>
                   <span className="font-serif font-bold text-xl md:text-2xl tracking-wide text-white block">
@@ -39,7 +37,7 @@ export default function Footer() {
                 <a href="#" className="w-10 h-10 rounded-full bg-stone-900 border border-stone-800 flex items-center justify-center text-stone-400 hover:text-amber-500 hover:border-amber-500 transition-colors">
                   <Instagram className="w-4 h-4" />
                 </a>
-                <a href="#" className="w-10 h-10 rounded-full bg-stone-900 border border-stone-800 flex items-center justify-center text-stone-400 hover:text-amber-500 hover:border-amber-500 transition-colors">
+                <a href="https://www.facebook.com/61593564872730/" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-stone-900 border border-stone-800 flex items-center justify-center text-stone-400 hover:text-amber-500 hover:border-amber-500 transition-colors">
                   <Facebook className="w-4 h-4" />
                 </a>
               </div>
@@ -86,7 +84,7 @@ export default function Footer() {
                 </li>
                 <li className="flex items-center gap-3">
                   <Phone className="w-5 h-5 text-amber-500 shrink-0" />
-                  <span>+91 7811074014</span>
+                  <span>+91 9064300941</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <Mail className="w-5 h-5 text-amber-500 shrink-0" />

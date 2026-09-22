@@ -1,26 +1,33 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Star, ShieldCheck, Truck, HeartHandshake } from 'lucide-react';
-import { collection, getDocs, limit, query } from 'firebase/firestore';
+import { ArrowRight, Star, ShieldCheck, Truck, HeartHandshake, Download, Smartphone } from 'lucide-react';
+import { collection, getDocs, limit, query, orderBy } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import type { Product } from '../types';
 
+import premiumSilkImg from '../assets/images/premium_silk_1788152325215.jpg';
+import dailyCottonImg from '../assets/images/daily_cotton_1788152337840.jpg';
+import weddingCollectionImg from '../assets/images/wedding_collection_1788152349825.jpg';
+import partyWearImg from '../assets/images/party_wear_1788152362720.jpg';
+
 const CATEGORIES = [
-  { id: 'silk', name: 'Premium Silk', image: 'https://images.unsplash.com/photo-1610189013233-286820bbba61?q=80&w=600&auto=format&fit=crop' },
-  { id: 'cotton', name: 'Daily Cotton', image: 'https://images.unsplash.com/photo-1583391733958-69279b986e7a?q=80&w=600&auto=format&fit=crop' },
-  { id: 'wedding', name: 'Wedding Collection', image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?q=80&w=600&auto=format&fit=crop' },
-  { id: 'party', name: 'Party Wear', image: 'https://images.unsplash.com/photo-1605658117957-c8612140e703?q=80&w=600&auto=format&fit=crop' }
+  { id: 'silk', name: 'Premium Silk', image: premiumSilkImg },
+  { id: 'cotton', name: 'Daily Cotton', image: dailyCottonImg },
+  { id: 'wedding', name: 'Wedding Collection', image: weddingCollectionImg },
+  { id: 'party', name: 'Party Wear', image: partyWearImg }
 ];
 
 export default function Home() {
   const [trending, setTrending] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [bannerUrl, setBannerUrl] = useState<string>('');
+  const [bannerUrl, setBannerUrl] = useState<string>(() => {
+    return localStorage.getItem('cachedBannerUrl') || '';
+  });
 
   useEffect(() => {
     const fetchTrending = async () => {
       try {
-        const q = query(collection(db, 'products'), limit(4));
+        const q = query(collection(db, 'products'), orderBy('createdAt', 'desc'), limit(8));
         const querySnapshot = await getDocs(q);
         const productsData = querySnapshot.docs.map(doc => ({
           id: doc.id,
@@ -41,7 +48,9 @@ export default function Home() {
         const docRef = await getDocs(query(collection(db, 'settings')));
         docRef.docs.forEach(doc => {
           if (doc.id === 'store' && doc.data().bannerUrl) {
-            setBannerUrl(doc.data().bannerUrl);
+            const url = doc.data().bannerUrl;
+            setBannerUrl(url);
+            localStorage.setItem('cachedBannerUrl', url);
           }
         });
       } catch (err) {}
@@ -52,36 +61,99 @@ export default function Home() {
   return (
     <div className="flex flex-col w-full">
       {/* Hero Section */}
-      <section className="relative w-full bg-black flex flex-col items-center justify-center border-b border-stone-800">
-        <div className="relative w-full mx-auto flex flex-col items-center">
-          <img 
-            src={bannerUrl || 'https://images.unsplash.com/photo-1613843513180-87747e447545?q=80&w=2000&auto=format&fit=crop'} 
-            alt="Hero Banner" 
-            className="w-full h-auto max-h-[80vh] object-cover block"
-            onError={(e) => {
-              e.currentTarget.src = 'https://images.unsplash.com/photo-1613843513180-87747e447545?q=80&w=2000&auto=format&fit=crop';
-              e.currentTarget.className = "w-full h-[60vh] object-cover";
-            }}
-          />
-        <div className="absolute bottom-[6%] sm:bottom-[8%] md:bottom-[10%] w-full flex justify-center z-10 px-4">
-          <Link 
-            to="/shop" 
-            className="px-8 py-3 sm:px-10 sm:py-4 bg-white/95 backdrop-blur-sm text-stone-900 font-sans font-semibold hover:bg-white hover:text-amber-600 transition-all rounded-none flex items-center justify-center gap-3 shadow-xl transform hover:-translate-y-1 duration-300 tracking-widest text-xs sm:text-sm uppercase"
-          >
-            Shop Collection <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5" />
-          </Link>
+      <section className="relative w-full bg-[#0a0a0a] flex flex-col items-center justify-center overflow-hidden pt-10 pb-6 md:pt-16 md:pb-10 perspective-[1000px]">
+        
+        {/* Subtle 3D Rotating Background */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-100 pointer-events-none mix-blend-screen">
+          <div className="absolute w-[150vw] h-[150vw] md:w-[100vw] md:h-[100vw] rounded-full border border-stone-700/50 bg-[radial-gradient(ellipse_at_center,rgba(245,158,11,0.15)_0%,rgba(0,0,0,0)_70%)] animate-[spin_60s_linear_infinite]" style={{ transform: 'rotateX(60deg)' }}>
+            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSJub25lIi8+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMS41IiBmaWxsPSJyZ2JhKDI0NSwgMTU4LCAxMSwgMC44KSIvPjwvc3ZnPg==')] opacity-100" />
+            <div className="absolute top-1/2 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-amber-500/60 to-transparent" />
+            <div className="absolute left-1/2 top-0 h-full w-[2px] bg-gradient-to-b from-transparent via-amber-500/60 to-transparent" />
+          </div>
+          <div className="absolute w-[100vw] h-[100vw] md:w-[70vw] md:h-[70vw] rounded-full border border-amber-600/40 animate-[spin_40s_linear_infinite_reverse]" style={{ transform: 'rotateX(60deg)' }}>
+            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCI+PHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSJub25lIi8+PGNpcmNsZSBjeD0iNDAiIGN5PSI0MCIgcj0iMi41IiBmaWxsPSJyZ2JhKDI1NSwgMjU1LCAyNTUsIDAuNykiLz48L3N2Zz4=')] opacity-100" />
+          </div>
+          {/* Glowing Center */}
+          <div className="absolute w-[20vw] h-[20vw] bg-amber-500/30 blur-[60px] rounded-full" />
         </div>
+
+        {/* Soft Ambient Glow in the background */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] max-w-4xl h-[60%] bg-amber-500/20 blur-[100px] pointer-events-none z-0" />
+
+        <div className="relative w-full mx-auto max-w-7xl px-3 sm:px-6 flex flex-col items-center justify-center z-10">
+          
+          {/* Floating 3D Image Wrapper with Tuni Lights (Fairy Lights) */}
+          <div className="relative group rounded-2xl p-[4px] transition-all duration-700 hover:-translate-y-2 shadow-[0_20px_50px_rgba(0,0,0,0.8)] hover:shadow-[0_30px_60px_rgba(245,158,11,0.4)]">
+            
+            {/* Blinking Tuni Lights Effect */}
+            <div className="absolute inset-0 rounded-2xl overflow-hidden z-0">
+              <style>
+                {`
+                  @keyframes tuni-blink {
+                    0%, 100% { opacity: 1; filter: drop-shadow(0 0 10px #f59e0b) brightness(1.2); }
+                    50% { opacity: 0.4; filter: drop-shadow(0 0 2px #f59e0b) brightness(0.8); }
+                  }
+                  @keyframes border-spin {
+                    100% { transform: rotate(360deg); }
+                  }
+                `}
+              </style>
+              <div 
+                className="absolute inset-[-150%] w-[400%] h-[400%] left-[-150%] top-[-150%] bg-[repeating-conic-gradient(transparent_0deg,transparent_6deg,#f59e0b_6deg,#f59e0b_9deg,transparent_9deg,transparent_15deg,#fbbf24_15deg,#fbbf24_18deg)]"
+                style={{ animation: 'border-spin 15s linear infinite, tuni-blink 1s ease-in-out infinite' }}
+              />
+              <div className="absolute inset-[4px] bg-[#0a0a0a] rounded-xl" />
+            </div>
+            
+            <div className="relative rounded-xl overflow-hidden bg-black/50 z-10">
+              {/* Glass reflection sweep */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-[1500ms] ease-in-out pointer-events-none z-10 mix-blend-overlay" />
+              
+              <img 
+                src={bannerUrl || 'https://images.unsplash.com/photo-1613843513180-87747e447545?q=80&w=2000&auto=format&fit=crop'} 
+                alt="Hero Banner" 
+                fetchPriority="high"
+                loading="eager"
+                className="w-full h-auto max-h-[50vh] sm:max-h-[60vh] md:max-h-[75vh] object-contain object-center block rounded-xl transform group-hover:scale-[1.01] transition-transform duration-700"
+                onError={(e) => {
+                  e.currentTarget.src = 'https://images.unsplash.com/photo-1613843513180-87747e447545?q=80&w=2000&auto=format&fit=crop';
+                }}
+              />
+            </div>
+          </div>
+          
+          <div className="mt-8 md:mt-12 w-full flex justify-center z-20 px-4 relative">
+            
+            {/* 3D Animated Button Container */}
+            <div className="relative group p-[3px] rounded-full inline-flex shadow-[0_0_30px_rgba(245,158,11,0.5)] hover:shadow-[0_0_60px_rgba(245,158,11,0.8)] transition-all duration-500 transform hover:scale-110">
+              
+              {/* Spinning 3D Animated Border */}
+              <div className="absolute inset-0 rounded-full overflow-hidden">
+                <div className="absolute inset-[-100%] bg-[conic-gradient(from_0deg_at_50%_50%,#f59e0b_0%,#000000_25%,#f59e0b_50%,#000000_75%,#f59e0b_100%)] animate-[spin_3s_linear_infinite]" />
+              </div>
+
+              {/* Inner Button Content */}
+              <Link 
+                to="/shop" 
+                className="relative px-8 py-4 bg-gradient-to-b from-stone-900 to-black text-amber-400 font-sans font-bold hover:text-amber-300 transition-colors duration-500 rounded-full flex items-center justify-center gap-3 tracking-widest text-sm uppercase shadow-[inset_0_2px_15px_rgba(245,158,11,0.2)]"
+              >
+                <span className="relative z-10 drop-shadow-[0_0_10px_rgba(245,158,11,1)]">Discover Collection</span> 
+                <ArrowRight className="w-5 h-5 relative z-10 animate-pulse text-amber-500" />
+              </Link>
+            </div>
+            
+          </div>
         </div>
       </section>
 
       {/* Categories */}
-      <section className="py-24 px-4 max-w-7xl mx-auto w-full">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-serif text-stone-900 mb-4 tracking-tight">Shop by Category</h2>
+      <section className="py-8 md:py-12 px-4 max-w-7xl mx-auto w-full">
+        <div className="text-center mb-6 md:mb-8">
+          <h2 className="text-3xl md:text-4xl font-serif text-stone-900 mb-2 tracking-tight">Shop by Category</h2>
           <div className="w-12 h-0.5 bg-amber-500 mx-auto" />
         </div>
         
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
           {CATEGORIES.map(category => (
             <Link 
               key={category.id} 
@@ -119,7 +191,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-between items-end mb-16">
             <div>
-              <h2 className="text-4xl font-serif text-stone-900 mb-4 tracking-tight">Trending Now</h2>
+              <h2 className="text-4xl font-serif text-stone-900 mb-4 tracking-tight">Latest Collection</h2>
               <div className="w-12 h-0.5 bg-amber-500" />
             </div>
             <Link to="/shop" className="text-amber-600 hover:text-amber-500 font-sans tracking-wide text-sm uppercase flex items-center gap-2 hidden sm:flex transition-colors">

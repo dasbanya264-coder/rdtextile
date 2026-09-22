@@ -7,8 +7,10 @@ import React, { Suspense } from 'react';
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
+import { WishlistProvider } from './contexts/WishlistContext';
 import Layout from './components/layout/Layout';
 import AdminLayout from './components/layout/AdminLayout';
+import ScrollToTop from './components/ScrollToTop';
 import { Loader2 } from 'lucide-react';
 
 // Lazy load pages for performance
@@ -36,8 +38,10 @@ export default function App() {
   return (
     <AuthProvider>
       <CartProvider>
-        <Router>
-          <Suspense fallback={<LoadingScreen />}>
+        <WishlistProvider>
+          <Router>
+            <ScrollToTop />
+            <Suspense fallback={<LoadingScreen />}>
             <Routes>
               {/* Storefront Routes */}
               <Route path="/" element={<Layout />}>
@@ -61,6 +65,7 @@ export default function App() {
             </Routes>
           </Suspense>
         </Router>
+        </WishlistProvider>
       </CartProvider>
     </AuthProvider>
   );

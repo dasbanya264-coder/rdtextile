@@ -2,6 +2,8 @@ import { Outlet } from 'react-router-dom';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import BottomNav from './BottomNav';
+import PWAInstallPrompt from '../PWAInstallPrompt';
+import WelcomeVoice from '../WelcomeVoice';
 import { useNetworkStatus } from '../../hooks/useNetworkStatus';
 import { WifiOff } from 'lucide-react';
 
@@ -9,6 +11,8 @@ export default function Layout() {
   const isOnline = useNetworkStatus();
   return (
     <div className="min-h-screen flex flex-col bg-stone-50 relative pb-16 md:pb-0">
+      <WelcomeVoice />
+      <PWAInstallPrompt />
       <Navbar />
       {!isOnline && (
         <div className="fixed top-16 left-0 right-0 z-50 bg-red-500 text-white px-4 py-2 text-center text-sm font-medium shadow-md flex items-center justify-center gap-2">
@@ -20,7 +24,7 @@ export default function Layout() {
         <Outlet />
       </main>
       <Footer />
-      
+
       {/* Floating Action Buttons */}
       <div className="fixed bottom-20 md:bottom-6 right-6 z-40 flex flex-col gap-3">
         {/* Google Maps Button */}
@@ -52,7 +56,7 @@ export default function Layout() {
 
         {/* WhatsApp Button */}
         <a
-          href="https://wa.me/917811074014?text=Hello%20Ripan%20Saree%20Center,%20I%20have%20a%20query."
+          href="https://wa.me/919064300941?text=Hello%20Ripan%20Saree%20Center,%20I%20have%20a%20query."
           target="_blank"
           rel="noopener noreferrer"
           className="bg-[#25D366] text-white p-3 md:p-4 rounded-full shadow-lg hover:bg-[#128C7E] hover:scale-110 transition-all duration-300 flex items-center justify-center group"

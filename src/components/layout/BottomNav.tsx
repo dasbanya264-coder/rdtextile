@@ -12,7 +12,7 @@ export default function BottomNav() {
     { name: 'Home', path: '/', icon: Home },
     { name: 'Shop', path: '/shop', icon: ShoppingBag },
     { name: 'Cart', path: '/cart', icon: ShoppingCart, badge: totalItems },
-    { name: 'Profile', path: user ? '/profile' : '/login', icon: User },
+    { name: 'Profile', path: (user && !user.isAnonymous) ? '/profile' : '/login', icon: User },
   ];
 
   return (
@@ -31,7 +31,7 @@ export default function BottomNav() {
               }`}
             >
               <div className="relative">
-                <Icon className={`w-6 h-6 ${isActive ? 'fill-amber-100' : ''}`} />
+                <Icon id={item.name === 'Cart' ? 'cart-icon-mobile' : undefined} className={`w-6 h-6 ${isActive ? 'fill-amber-100' : ''}`} />
                 {item.badge !== undefined && item.badge > 0 && (
                   <span className="absolute -top-1.5 -right-2 bg-amber-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] flex items-center justify-center rounded-full px-1">
                     {item.badge}

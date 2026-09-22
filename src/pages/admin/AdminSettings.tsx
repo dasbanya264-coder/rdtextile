@@ -15,7 +15,7 @@ export default function AdminSettings() {
     bannerUrl: '',
     logoUrl: '',
     storeName: 'Ripan Saree Center',
-    contactPhone: '917811074014'
+    contactPhone: '919064300941'
   });
 
   useEffect(() => {
@@ -54,7 +54,7 @@ export default function AdminSettings() {
     if (!file) return;
     setUploading(prev => ({ ...prev, [type]: true }));
     try {
-      const base64Data = await compressImageToBase64(file, type === 'banner' ? 1200 : 512);
+      const base64Data = await compressImageToBase64(file, type === 'banner' ? 1920 : 800);
       setSettings(prev => {
         const newSettings = { ...prev, [type === 'banner' ? 'bannerUrl' : 'logoUrl']: base64Data };
         setDoc(doc(db, 'settings', 'store'), newSettings, { merge: true })

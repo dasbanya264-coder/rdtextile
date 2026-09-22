@@ -62,7 +62,7 @@ export default function AdminProducts() {
         const file = fileArray[i] as File;
         const fileId = `img-${Date.now()}-${Math.random().toString(36).substring(2, 9)}-${i}`;
         setUploadProgress(prev => ({ ...prev, [fileId]: 50 }));
-        const base64Data = await compressImageToBase64(file, 800);
+        const base64Data = await compressImageToBase64(file, 1800);
         setUploadProgress(prev => ({ ...prev, [fileId]: 100 }));
         uploadedUrls.push(base64Data);
       }
@@ -71,7 +71,7 @@ export default function AdminProducts() {
         images: [...prev.images.filter(img => !img.includes('unsplash.com')), ...uploadedUrls] 
       }));
     } catch (err) {
-      setUploadError("Image compression failed. Please try again.");
+      setUploadError("Image processing failed. Please try again.");
       console.error(err);
     } finally {
       setUploading(false);
@@ -82,26 +82,40 @@ export default function AdminProducts() {
   const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      alert("Video is too large! Please select a clip under 5MB.");
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Video is too large! Please select a clip under 10MB.");
       return;
     }
     setUploading(true);
     setUploadError(null);
     const fileId = `vid-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-    try {
-      const storageRef = ref(storage, `products/videos/${fileId}-${file.name}`);
-      setUploadProgress(prev => ({ ...prev, [fileId]: 10 }));
-      const snapshot = await uploadBytes(storageRef, file);
-      setUploadProgress(prev => ({ ...prev, [fileId]: 100 }));
-      const downloadURL = await getDownloadURL(snapshot.ref);
-      setFormData(prev => ({ ...prev, videos: [...(prev.videos || []), downloadURL] }));
-    } catch (err) {
-      setUploadError("Video upload failed. Please try again.");
-    } finally {
-      setUploading(false);
-      setUploadProgress({});
-    }
+    const storageRef = ref(storage, `products/videos/${fileId}-${file.name}`);
+    
+    const uploadTask = uploadBytesResumable(storageRef, file);
+    
+    uploadTask.on('state_changed', 
+      (snapshot) => {
+        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        setUploadProgress(prev => ({ ...prev, [fileId]: progress }));
+      }, 
+      (error) => {
+        console.error(error);
+        setUploadError("Video upload failed. Please try again.");
+        setUploading(false);
+        setUploadProgress({});
+      }, 
+      async () => {
+        try {
+          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+          setFormData(prev => ({ ...prev, videos: [...(prev.videos || []), downloadURL] }));
+        } catch (err) {
+          setUploadError("Failed to get video URL.");
+        } finally {
+          setUploading(false);
+          setUploadProgress({});
+        }
+      }
+    );
   };
 
   const removeImage = (index: number) => {
@@ -362,7 +376,7 @@ export default function AdminProducts() {
                     
                   <div className="border border-stone-200 rounded-md p-4">
                     <label className="block text-sm font-medium text-stone-700 mb-2">Product Videos</label>
-                    <p className="text-xs text-stone-500 mb-3">Upload a short video (Max 5MB) or paste a YouTube link.</p>
+                    <p className="text-xs text-stone-500 mb-3">Upload a short video (Max 10MB) or paste a YouTube link.</p>
                     <div className="flex gap-2 mb-3">
                       <input 
                         value={formData.newVideoUrl} 

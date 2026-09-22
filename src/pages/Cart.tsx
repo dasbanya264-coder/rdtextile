@@ -1,13 +1,24 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
+import { useAuth } from '../contexts/AuthContext';
 import { Trash2, ArrowRight, Minus, Plus, ShoppingCart } from 'lucide-react';
 import { formatPrice } from '../lib/utils';
 
 export default function Cart() {
   const { items, removeFromCart, updateQuantity, subtotal } = useCart();
-  const deliveryCharge = items.length > 0 ? (subtotal > 2000 ? 0 : 150) : 0;
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const deliveryCharge = items.length > 0 ? 0 : 0;
   const total = subtotal + deliveryCharge;
+
+  const handleCheckout = () => {
+    if (user && !user.isAnonymous) {
+      navigate('/checkout');
+    } else {
+      navigate('/login', { state: { from: { pathname: '/checkout' } } });
+    }
+  };
 
   if (items.length === 0) {
     return (
@@ -120,12 +131,12 @@ export default function Cart() {
               <span className="text-2xl font-serif text-amber-600">{formatPrice(total)}</span>
             </div>
 
-            <Link 
-              to="/checkout"
+            <button 
+              onClick={handleCheckout}
               className="w-full py-4 bg-stone-900 text-white font-medium hover:bg-amber-600 transition-colors rounded-sm flex items-center justify-center gap-2"
             >
               Proceed to Checkout <ArrowRight className="w-5 h-5" />
-            </Link>
+            </button>
 
             <div className="mt-6 space-y-3">
               <div className="flex items-center gap-2 text-xs text-stone-500 justify-center">

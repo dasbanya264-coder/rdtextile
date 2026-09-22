@@ -4,7 +4,10 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import type { Product } from '../types';
 import { useCart } from '../contexts/CartContext';
-import { ShoppingCart, ArrowLeft, ZoomIn, X, Video } from 'lucide-react';
+import { useWishlist } from '../contexts/WishlistContext';
+import { ShoppingCart, ArrowLeft, ZoomIn, X, Video, CreditCard, Heart, ChevronLeft, ChevronRight } from 'lucide-react';
+import { triggerCartAnimation } from '../lib/utils';
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -13,7 +16,14 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState(true);
   const [activeMedia, setActiveMedia] = useState<{type: 'image'|'video', url: string}>({type: 'image', url: ''});
   const [showZoom, setShowZoom] = useState(false);
+  
+  // Swipe handling
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const minSwipeDistance = 50;
+  
   const { addToCart } = useCart();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -51,6 +61,46 @@ export default function ProductDetail() {
     return (match && match[2].length === 11) ? match[2] : null;
   };
 
+  const handleSwipe = (direction: 'left' | 'right') => {
+    const allMedia = [
+      ...(product.images || []).map(url => ({ type: 'image' as const, url })),
+      ...(product.videos || []).map(url => ({ type: 'video' as const, url }))
+    ];
+    if (allMedia.length === 0) return;
+
+    const currentIndex = allMedia.findIndex(m => m.url === activeMedia.url);
+    if (currentIndex === -1) return;
+
+    let nextIndex = currentIndex;
+    if (direction === 'left') {
+      nextIndex = (currentIndex + 1) % allMedia.length;
+    } else {
+      nextIndex = (currentIndex - 1 + allMedia.length) % allMedia.length;
+    }
+    setActiveMedia(allMedia[nextIndex]);
+  };
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+    if (isLeftSwipe) {
+      handleSwipe('left');
+    } else if (isRightSwipe) {
+      handleSwipe('right');
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
       <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-stone-400 hover:text-amber-600 mb-8 transition-colors text-sm uppercase tracking-widest font-sans font-medium">
@@ -61,9 +111,40 @@ export default function ProductDetail() {
         {/* Media Gallery */}
         <div className="md:w-1/2 p-6 md:p-10 flex flex-col gap-6 bg-stone-50">
           <div 
-            className="relative bg-white rounded-2xl overflow-hidden aspect-[4/5] cursor-zoom-in group shadow-sm border border-stone-100"
+            className="relative bg-white rounded-2xl overflow-hidden aspect-[4/5] cursor-zoom-in group shadow-sm border-[2px]"
+            style={{ borderColor: '#0bd80b' }}
             onClick={() => activeMedia.type === 'image' && setShowZoom(true)}
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
           >
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                handleSwipe('right');
+              }}
+              className="absolute top-1/2 left-4 -translate-y-1/2 z-20 w-10 h-10 bg-white/90 backdrop-blur-md rounded-full items-center justify-center hover:scale-110 shadow-sm transition-all text-stone-600 hover:text-amber-600 hidden group-hover:flex"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                handleSwipe('left');
+              }}
+              className="absolute top-1/2 right-4 -translate-y-1/2 z-20 w-10 h-10 bg-white/90 backdrop-blur-md rounded-full items-center justify-center hover:scale-110 shadow-sm transition-all text-stone-600 hover:text-amber-600 hidden group-hover:flex"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                isInWishlist(product.id) ? removeFromWishlist(product.id) : addToWishlist(product);
+              }}
+              className={`absolute top-4 right-4 z-20 w-10 h-10 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center hover:scale-110 shadow-sm transition-all ${isInWishlist(product.id) ? 'text-red-500' : 'text-stone-400 hover:text-red-500'}`}
+            >
+              <Heart className="w-5 h-5" fill={isInWishlist(product.id) ? "currentColor" : "none"} />
+            </button>
             {activeMedia.type === 'video' ? (
               getYoutubeId(activeMedia.url) ? (
                 <iframe 
@@ -74,7 +155,7 @@ export default function ProductDetail() {
                   allowFullScreen
                 ></iframe>
               ) : (
-                <video src={activeMedia.url} controls controlsList="nodownload" autoPlay loop muted playsInline className="w-full h-full object-contain bg-black" />
+                <video src={activeMedia.url} preload="metadata" controls controlsList="nodownload" autoPlay loop muted playsInline className="w-full h-full object-contain bg-black" />
               )
             ) : (
               <>
@@ -151,17 +232,31 @@ export default function ProductDetail() {
           </div>
 
           <div className="mt-auto pt-8">
-            <button 
-              onClick={() => {
-                addToCart(product);
-                navigate('/cart');
-              }}
-              disabled={product.stockQuantity === 0}
-              className="w-full py-5 bg-stone-900 text-white font-sans font-semibold hover:bg-amber-600 transition-all rounded-none flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed text-sm uppercase tracking-widest shadow-md hover:shadow-lg"
-            >
-              <ShoppingCart className="w-5 h-5" /> 
-              {product.stockQuantity > 0 ? 'Add to Cart — Buy Now' : 'Out of Stock'}
-            </button>
+            <div className="flex gap-4">
+              <button 
+                onClick={(e) => {
+                  addToCart(product);
+                  triggerCartAnimation(e);
+                }}
+                disabled={product.stockQuantity === 0}
+                className="flex-1 py-4 bg-white border border-stone-900 text-stone-900 font-sans font-semibold hover:bg-stone-900 hover:text-white transition-all rounded-none flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm uppercase tracking-widest"
+              >
+                <ShoppingCart className="w-4 h-4" /> 
+                {product.stockQuantity > 0 ? 'Add to Cart' : 'Out of Stock'}
+              </button>
+              
+              <button 
+                onClick={() => {
+                  addToCart(product);
+                  navigate('/cart');
+                }}
+                disabled={product.stockQuantity === 0}
+                className="flex-1 py-4 bg-stone-900 text-white font-sans font-semibold hover:bg-amber-600 transition-all rounded-none flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm uppercase tracking-widest shadow-md hover:shadow-lg"
+              >
+                <CreditCard className="w-4 h-4" /> 
+                Buy Now
+              </button>
+            </div>
             
             <div className="mt-10 pt-8 border-t border-stone-100 grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
@@ -188,19 +283,30 @@ export default function ProductDetail() {
       </div>
       {/* Zoom Modal */}
       {showZoom && activeMedia.type === 'image' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4 md:p-10 backdrop-blur-sm" onClick={() => setShowZoom(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm">
           <button 
-            className="absolute top-6 right-6 text-white/70 hover:text-white transition-colors"
+            className="absolute top-6 right-6 z-[110] text-white/70 hover:text-white transition-colors bg-black/20 p-2 rounded-full"
             onClick={() => setShowZoom(false)}
           >
             <X className="w-8 h-8" />
           </button>
-          <img 
-            src={activeMedia.url} 
-            alt={product.name} 
-            className="max-w-full max-h-full object-contain cursor-zoom-out"
-            onClick={(e) => e.stopPropagation()} // Let them click image without closing if we wanted pan, but close on image click is fine too
-          />
+          
+          <TransformWrapper
+            initialScale={1}
+            minScale={1}
+            maxScale={4}
+            centerOnInit
+            wheel={{ step: 0.1 }}
+          >
+            <TransformComponent wrapperClass="!w-screen !h-screen flex items-center justify-center">
+              <img 
+                src={activeMedia.url} 
+                alt={product.name} 
+                className="max-w-full max-h-full object-contain cursor-move"
+                draggable={false}
+              />
+            </TransformComponent>
+          </TransformWrapper>
         </div>
       )}
     </div>

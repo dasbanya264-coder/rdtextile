@@ -4,7 +4,6 @@ import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { collection, addDoc } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
-import { signInAnonymously } from 'firebase/auth';
 import { formatPrice, compressImage, compressImageToBase64, createThumbnailFromBase64 } from '../lib/utils';
 import type { Order } from '../types';
 
@@ -20,20 +19,14 @@ export default function Checkout() {
   const [loading, setLoading] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
 
-  const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([]);
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const [photoError, setPhotoError] = useState<string | null>(null);
-  const [photoProgress, setPhotoProgress] = useState<number>(0);
-
-
   const [step, setStep] = useState(1);
 
-  // Ensure user is at least authenticated anonymously for uploads and order creation
+  // Ensure user is fully authenticated (not anonymous)
   useEffect(() => {
-    if (!user) {
-      signInAnonymously(auth).catch(console.error);
+    if (!user || user.isAnonymous) {
+      navigate('/login', { state: { from: { pathname: '/checkout' } } });
     }
-  }, [user]);
+  }, [user, navigate]);
 
 
   const formRef = useRef<HTMLFormElement>(null);
@@ -104,7 +97,7 @@ export default function Checkout() {
     }
   }, [formData.transactionId, step, formData.paymentMethod, loading]);
 
-  const deliveryCharge = items.length > 0 ? (subtotal > 2000 ? 0 : 150) : 0;
+  const deliveryCharge = 0;
   const total = subtotal + deliveryCharge;
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -131,72 +124,6 @@ export default function Checkout() {
   };
 
   
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    setUploadingPhoto(true);
-    setPhotoError(null);
-    setPhotoProgress(0);
-
-    try {
-      const urls: string[] = [];
-      const fileArray = Array.from(files).slice(0, 2);
-      if (files.length > 2) alert("Only the first 2 images will be uploaded.");
-      const totalFiles = fileArray.length;
-      
-      for (let i = 0; i < totalFiles; i++) {
-        const file = fileArray[i] as File;
-        const fileId = `customer_photo_${Date.now()}_${Math.random().toString(36).substring(2, 9)}_${i}`;
-        
-        const options = {
-          maxSizeMB: 1.5,
-          maxWidthOrHeight: 1920,
-          useWebWorker: true,
-          fileType: 'image/webp',
-          initialQuality: 0.8
-        };
-        const compressedFile = await compressImage(file);
-
-        const storageRef = ref(storage, `orders/photos/${fileId}.webp`);
-        const uploadTask = uploadBytesResumable(storageRef, compressedFile);
-
-        const url = await new Promise<string>((resolve, reject) => {
-          uploadTask.on(
-            'state_changed',
-            (snapshot) => {
-              const baseProgress = (i / totalFiles) * 100;
-              const currentFileProgress = (snapshot.bytesTransferred / snapshot.totalBytes) * (100 / totalFiles);
-              setPhotoProgress(Math.round(baseProgress + currentFileProgress));
-            },
-            (error) => {
-              console.error("Upload failed:", error);
-              reject(error);
-            },
-            async () => {
-              const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
-              resolve(downloadUrl);
-            }
-          );
-        });
-        urls.push(url);
-      }
-
-      setUploadedPhotos(prev => [...prev, ...urls]);
-    } catch (err) {
-      console.error("Error uploading photo:", err);
-      setPhotoError("Photo upload failed. Please try again.");
-    } finally {
-      setUploadingPhoto(false);
-      setPhotoProgress(0);
-      if (e.target) e.target.value = ''; 
-    }
-  };
-
-  const removePhoto = (urlToRemove: string) => {
-    setUploadedPhotos(prev => prev.filter(url => url !== urlToRemove));
-  };
-
   const getLiveLocation = () => {
     if (!navigator.geolocation) {
       alert("Your browser does not support geolocation.");
@@ -284,7 +211,7 @@ export default function Checkout() {
         total,
         status: 'pending',
         paymentMethod: formData.paymentMethod,
-        uploadedPhotos: uploadedPhotos,
+        uploadedPhotos: [],
         paymentStatus: 'pending',
         transactionId: formData.paymentMethod === 'upi' ? formData.transactionId : null,
         shippingAddress: {
@@ -303,8 +230,7 @@ export default function Checkout() {
 
       await addDoc(collection(db, 'orders'), orderData);
       clearCart();
-      alert('Order placed successfully!');
-      navigate('/');
+      setStep(4);
     } catch (err) {
       console.error('Error placing order:', err);
       alert('Failed to place order. Please try again.');
@@ -314,12 +240,12 @@ export default function Checkout() {
   };
 
   useEffect(() => {
-    if (items.length === 0) {
+    if (items.length === 0 && step < 4) {
       navigate('/cart');
     }
-  }, [items.length, navigate]);
+  }, [items.length, navigate, step]);
 
-  if (items.length === 0) {
+  if (items.length === 0 && step < 4) {
     return null;
   }
 
@@ -328,19 +254,23 @@ export default function Checkout() {
       <h1 className="text-3xl font-serif text-stone-900 mb-8">Checkout</h1>
       
       {/* Steps Indicator */}
-      <div className="flex items-center justify-between mb-8 relative">
-        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-stone-200 -z-10 rounded-full"></div>
-        <div className={`absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-amber-500 -z-10 rounded-full transition-all duration-500`} style={{ width: `${((step - 1) / 2) * 100}%` }}></div>
-        
-        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm border-2 ${step >= 1 ? 'bg-amber-500 border-amber-500 text-white' : 'bg-white border-stone-300 text-stone-400'}`}>1</div>
-        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm border-2 transition-colors duration-500 ${step >= 2 ? 'bg-amber-500 border-amber-500 text-white' : 'bg-white border-stone-300 text-stone-400'}`}>2</div>
-        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm border-2 transition-colors duration-500 ${step >= 3 ? 'bg-amber-500 border-amber-500 text-white' : 'bg-white border-stone-300 text-stone-400'}`}>3</div>
-      </div>
-      <div className="flex justify-between text-xs font-medium text-stone-500 mb-8 px-2 uppercase tracking-widest">
-        <span>Address</span>
-        <span>Summary</span>
-        <span>Payment</span>
-      </div>
+      {step < 4 && (
+        <>
+          <div className="flex items-center justify-between mb-8 relative">
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-stone-200 -z-10 rounded-full"></div>
+            <div className={`absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-amber-500 -z-10 rounded-full transition-all duration-500`} style={{ width: `${((step - 1) / 2) * 100}%` }}></div>
+            
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm border-2 ${step >= 1 ? 'bg-amber-500 border-amber-500 text-white' : 'bg-white border-stone-300 text-stone-400'}`}>1</div>
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm border-2 transition-colors duration-500 ${step >= 2 ? 'bg-amber-500 border-amber-500 text-white' : 'bg-white border-stone-300 text-stone-400'}`}>2</div>
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm border-2 transition-colors duration-500 ${step >= 3 ? 'bg-amber-500 border-amber-500 text-white' : 'bg-white border-stone-300 text-stone-400'}`}>3</div>
+          </div>
+          <div className="flex justify-between text-xs font-medium text-stone-500 mb-8 px-2 uppercase tracking-widest">
+            <span>Address</span>
+            <span>Summary</span>
+            <span>Payment</span>
+          </div>
+        </>
+      )}
 
       <div className="flex flex-col md:flex-row gap-8">
         <div className="flex-1">
@@ -458,56 +388,6 @@ export default function Checkout() {
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg> Back
                   </button>
                   <button type="button" onClick={validateSummaryAndNext} className="px-8 py-3.5 bg-stone-900 text-white font-medium hover:bg-amber-600 transition-colors rounded-full flex items-center gap-2">
-                    
-                {/* Photo Upload Section */}
-                <div className="mt-8 bg-stone-50 p-6 rounded-xl border border-stone-200">
-                  <h3 className="text-lg font-serif text-stone-900 mb-2">Upload Reference Photos (Optional)</h3>
-                  <p className="text-sm text-stone-500 mb-4">Attach any screenshots, payment receipts, or custom design references for your order.</p>
-                  
-                  {photoError && (
-                    <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-md border border-red-200">
-                      {photoError}
-                    </div>
-                  )}
-
-                  <div className="flex flex-wrap gap-4 mb-4">
-                    {uploadedPhotos.map((url, idx) => (
-                      <div key={idx} className="relative w-24 h-24 rounded-lg overflow-hidden border border-stone-200 shadow-sm group">
-                        <img src={url} alt="Uploaded preview" className="w-full h-full object-cover" />
-                        <button 
-                          type="button" 
-                          onClick={() => removePhoto(url)} 
-                          className="absolute top-1 right-1 bg-white/90 text-red-600 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
-                    
-                    <label className={`w-24 h-24 rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors ${uploadingPhoto ? 'border-stone-300 bg-stone-100' : 'border-amber-300 hover:border-amber-500 bg-white hover:bg-amber-50 text-amber-700'}`}>
-                      {uploadingPhoto ? (
-                        <>
-                          <Loader2 className="w-6 h-6 animate-spin text-stone-400 mb-1" />
-                          <span className="text-[10px] font-medium text-stone-500">{photoProgress}%</span>
-                        </>
-                      ) : (
-                        <>
-                          <UploadCloud className="w-6 h-6 mb-1" />
-                          <span className="text-[10px] font-medium">Add Photo</span>
-                        </>
-                      )}
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        multiple 
-                        className="hidden" 
-                        onChange={handlePhotoUpload} 
-                        disabled={uploadingPhoto} 
-                      />
-                    </label>
-                  </div>
-                </div>
-
                     Next: Payment <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                   </button>
                 </div>
@@ -663,6 +543,27 @@ export default function Checkout() {
                     {loading ? 'Processing...' : 'Place Order'} <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                   </button>
                 </div>
+              </div>
+            )}
+            {/* Step 4: Success */}
+            {step === 4 && (
+              <div className="animate-in zoom-in-95 duration-500 py-16 flex flex-col items-center justify-center text-center">
+                <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mb-6 shadow-sm border border-emerald-200">
+                  <svg className="w-12 h-12 text-emerald-600 animate-[bounce_1s_ease-in-out_infinite]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h2 className="text-3xl font-serif text-stone-900 mb-2">Successful!</h2>
+                <p className="text-stone-500 mb-8 max-w-md">
+                  Your order has been placed successfully. You will receive a confirmation shortly.
+                </p>
+                <button 
+                  type="button" 
+                  onClick={() => navigate('/')} 
+                  className="px-8 py-3.5 bg-stone-900 text-white font-medium hover:bg-amber-600 transition-colors rounded-full shadow-md"
+                >
+                  Continue Shopping
+                </button>
               </div>
             )}
           </form>

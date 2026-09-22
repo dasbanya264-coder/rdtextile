@@ -4,7 +4,9 @@ import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import type { Product } from '../types';
 import { useCart } from '../contexts/CartContext';
+import { useWishlist } from '../contexts/WishlistContext';
 import { Filter, ShoppingCart, Heart } from 'lucide-react';
+import { triggerCartAnimation } from '../lib/utils';
 
 export default function Shop() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -17,9 +19,10 @@ export default function Shop() {
   const searchQuery = searchParams.get('search');
   const [priceRange, setPriceRange] = useState(10000);
   const [selectedFabric, setSelectedFabric] = useState('all');
-  const [sortBy, setSortBy] = useState('recommended');
+  const [sortBy, setSortBy] = useState('newest');
   
   const { addToCart } = useCart();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -240,8 +243,14 @@ export default function Shop() {
                     </div>
                   )}
                                  </Link>
-                  <button className="absolute top-4 right-4 w-8 h-8 sm:w-10 sm:h-10 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center text-stone-400 hover:text-red-500 hover:scale-110 shadow-sm transition-all z-10">
-                    <Heart className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <button 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      isInWishlist(product.id) ? removeFromWishlist(product.id) : addToWishlist(product);
+                    }}
+                    className={`absolute top-4 right-4 w-8 h-8 sm:w-10 sm:h-10 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center hover:scale-110 shadow-sm transition-all z-10 ${isInWishlist(product.id) ? 'text-red-500' : 'text-stone-400 hover:text-red-500'}`}
+                  >
+                    <Heart className="w-4 h-4 sm:w-5 sm:h-5" fill={isInWishlist(product.id) ? "currentColor" : "none"} />
                   </button>
                 </div>
                 <div className="p-4 sm:p-6 flex-1 flex flex-col">
@@ -259,7 +268,10 @@ export default function Shop() {
                     </div>
                     
                     <button 
-                      onClick={() => addToCart(product)}
+                      onClick={(e) => {
+                        addToCart(product);
+                        triggerCartAnimation(e);
+                      }}
                       className="w-full py-2.5 sm:py-3.5 text-xs sm:text-sm bg-white border border-stone-900 text-stone-900 font-semibold hover:bg-stone-900 hover:text-white transition-all rounded-none flex items-center justify-center gap-2 tracking-widest uppercase"
                     >
                       <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">Add to Cart</span><span className="sm:hidden">Add</span>

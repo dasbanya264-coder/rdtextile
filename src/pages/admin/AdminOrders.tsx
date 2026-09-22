@@ -3,7 +3,7 @@ import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import type { Order } from '../../types';
 import { formatPrice } from '../../lib/utils';
-import { Package, Truck, CheckCircle, XCircle, Printer, Search } from 'lucide-react';
+import { Package, Truck, CheckCircle, XCircle, Printer, Search, MessageCircle } from 'lucide-react';
 
 export default function AdminOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -63,6 +63,16 @@ export default function AdminOrders() {
     } catch (err) {
       console.error("Error updating payment status:", err);
     }
+  };
+
+  const handleSendWhatsApp = (order: Order) => {
+    let phone = order.shippingAddress.phone.replace(/\D/g, '');
+    if (phone.length === 10) {
+      phone = '91' + phone;
+    }
+    const message = `Hello ${order.shippingAddress.fullName},\n\nYour order at Ripan Saree Center has been successfully received!\n\nOrder ID: #${order.id.slice(-6).toUpperCase()}\nTotal Amount: Rs. ${order.total}\nPayment Status: ${order.paymentStatus.toUpperCase()}\n\nWe will process it soon. Thank you!`;
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
   };
 
   const handlePrintLabel = (order: Order) => {
@@ -177,9 +187,20 @@ export default function AdminOrders() {
               ) : (
                 filteredOrders.map(order => (
                   <tr key={order.id} className="hover:bg-stone-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4">
                       <div className="font-medium text-stone-900 mb-1">#{order.id.slice(-6).toUpperCase()}</div>
-                      <div className="text-sm text-stone-500">{order.items.length} items</div>{order.uploadedPhotos && order.uploadedPhotos.length > 0 && (<div className="mt-2 flex gap-1 flex-wrap">{order.uploadedPhotos.map((url, i) => (<a key={i} href={url} target="_blank" rel="noopener noreferrer"><img src={url} alt="Attachment" className="w-10 h-10 object-cover rounded border border-stone-200 hover:border-amber-500 transition-colors" /></a>))}</div>)}
+                      <div className="text-sm text-stone-500 mb-2">{order.items.length} items</div>
+                      <div className="flex flex-col gap-2">
+                        {order.items.map((item, idx) => (
+                          <div key={idx} className="flex items-center gap-2">
+                            <a href={item.image} target="_blank" rel="noopener noreferrer" title="Click to enlarge">
+                              <img src={item.image} alt={item.name} className="w-10 h-10 object-cover rounded border border-stone-200 hover:scale-150 transition-transform cursor-zoom-in" />
+                            </a>
+                            <div className="text-xs text-stone-600 line-clamp-1 max-w-[150px]" title={item.name}>{item.name}</div>
+                          </div>
+                        ))}
+                      </div>
+                      {order.uploadedPhotos && order.uploadedPhotos.length > 0 && (<div className="mt-2 flex gap-1 flex-wrap">{order.uploadedPhotos.map((url, i) => (<a key={i} href={url} target="_blank" rel="noopener noreferrer"><img src={url} alt="Attachment" className="w-10 h-10 object-cover rounded border border-stone-200 hover:border-amber-500 transition-colors" /></a>))}</div>)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-stone-900 font-medium">{order.shippingAddress.fullName}</div>
@@ -226,6 +247,12 @@ export default function AdminOrders() {
                           <option value="delivered">Delivered</option>
                           <option value="cancelled">Cancelled</option>
                         </select>
+                        <button 
+                          onClick={() => handleSendWhatsApp(order)}
+                          className="flex items-center justify-center gap-1.5 w-full max-w-[120px] px-2 py-1.5 bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#128C7E] text-xs font-medium rounded transition-colors"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
+                        </button>
                         <button 
                           onClick={() => handlePrintLabel(order)}
                           className="flex items-center justify-center gap-1.5 w-full max-w-[120px] px-2 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-medium rounded transition-colors"

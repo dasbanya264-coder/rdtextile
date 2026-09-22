@@ -1,0 +1,88 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and authentication data",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "User full name", "maxLength": 100 },
+        "email": { "type": "string", "description": "User email address", "maxLength": 150 },
+        "role": { "type": "string", "description": "User role: customer or admin", "enum": ["customer", "admin"] },
+        "phone": { "type": "string", "description": "Contact phone number", "maxLength": 20 },
+        "address": { "type": "string", "description": "Shipping address", "maxLength": 500 },
+        "avatar": { "type": "string", "description": "Profile picture URL or Base64" },
+        "createdAt": { "type": "string", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "description": "Update timestamp" }
+      },
+      "required": ["name", "email", "role"]
+    },
+    "StoreSettings": {
+      "title": "StoreSettings",
+      "description": "Global store configuration and customization",
+      "type": "object",
+      "properties": {
+        "storeName": { "type": "string", "description": "Store name", "maxLength": 100 },
+        "logoUrl": { "type": "string", "description": "Logo URL or base64" },
+        "bannerUrl": { "type": "string", "description": "Hero banner URL or base64" },
+        "contactPhone": { "type": "string", "description": "Customer contact phone", "maxLength": 20 }
+      },
+      "required": ["storeName"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Store inventory product record",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Product title", "maxLength": 200 },
+        "category": { "type": "string", "description": "Category name", "maxLength": 50 },
+        "price": { "type": "number", "description": "Selling price" },
+        "originalPrice": { "type": "number", "description": "Original marked price" },
+        "stock": { "type": "number", "description": "Available stock quantity" },
+        "description": { "type": "string", "description": "Product details description" },
+        "images": { "type": "string", "description": "Array of image URLs or Base64 strings" },
+        "videoUrl": { "type": "string", "description": "Optional showcase video URL" },
+        "fabric": { "type": "string", "description": "Fabric material" },
+        "blousePiece": { "type": "string", "description": "Whether blouse piece is included" },
+        "isActive": { "type": "string", "description": "Whether product is active" },
+        "createdAt": { "type": "string", "description": "Creation timestamp" }
+      },
+      "required": ["name", "category", "price", "stock"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer purchase order",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "User ID or guest identifier", "maxLength": 128 },
+        "items": { "type": "string", "description": "Order items list" },
+        "total": { "type": "number", "description": "Grand total order amount" },
+        "status": { "type": "string", "description": "Order fulfillment status", "enum": ["pending", "confirmed", "shipped", "delivered", "cancelled"] },
+        "paymentStatus": { "type": "string", "description": "Payment status", "enum": ["pending", "completed", "failed"] },
+        "customerName": { "type": "string", "description": "Customer name", "maxLength": 100 },
+        "phone": { "type": "string", "description": "Customer phone", "maxLength": 20 },
+        "address": { "type": "string", "description": "Shipping address", "maxLength": 500 },
+        "paymentMethod": { "type": "string", "description": "Payment method" },
+        "createdAt": { "type": "string", "description": "Creation timestamp" }
+      },
+      "required": ["userId", "items", "total", "status", "paymentStatus"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile collection"
+    },
+    "/settings/{document}": {
+      "schema": "StoreSettings",
+      "description": "Global store settings"
+    },
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Catalog products collection"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Customer orders collection"
+    }
+  }
+}
